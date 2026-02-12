@@ -18,6 +18,7 @@ const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
     'https://aarvionservices.com',
+    'https://www.aarvionservices.com',
     process.env.CLIENT_URL
 ].filter(Boolean); // Remove undefined values
 
