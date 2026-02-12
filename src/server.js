@@ -75,11 +75,36 @@ async function startServer() {
         });
     });
 
-    // Start Server
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-        console.log(`GraphQL ready at http://localhost:${PORT}/graphql`);
-    });
+    // Only start HTTP server if not in serverless environment
+    if (!process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.VERCEL && !process.env.NETLIFY) {
+        // Start Server
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+            console.log(`GraphQL ready at http://localhost:${PORT}/graphql`);
+        });
+    }
+
+    return app;
 }
 
-startServer();
+// Initialize server
+let serverPromise;
+if (require.main === module) {
+    // Running directly (local development)
+    serverPromise = startServer().catch(err => {
+        console.error('Failed to start server:', err);
+        process.exit(1);
+    });
+} else {
+    // Being imported (serverless)
+    serverPromise = startServer();
+}
+
+// Export for serverless environments
+module.exports = app;
+module.exports.handler = async (event, context) => {
+    await serverPromise; // Ensure server is initialized
+    const serverless = require('serverless-http');
+    return serverless(app)(event, context);
+};
+
