@@ -3,10 +3,41 @@ const path = require('path');
 const fs = require('fs');
 
 // Create temp directory if it doesn't exist
-const tempDir = path.join(__dirname, '../../temp/uploads');
-if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir, { recursive: true });
-    console.log('✅ Created temp uploads directory:', tempDir);
+// Use /tmp in serverless environments (AWS Lambda), local path otherwise
+let tempDir;
+const isServerless = process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL || process.env.NETLIFY;
+
+if (isServerless) {
+    // In serverless environments, use /tmp which is writable
+    tempDir = '/tmp/uploads';
+} else {
+    // In local development, use relative path
+    tempDir = path.join(__dirname, '../../temp/uploads');
+}
+
+// Ensure directory exists
+try {
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+        console.log('✅ Created temp uploads directory:', tempDir);
+    }
+} catch (error) {
+    console.error('❌ Failed to create temp directory:', error.message);
+    // Fallback to /tmp if directory creation fails
+    if (!isServerless) {
+        tempDir = '/tmp/uploads';
+        try {
+            if (!fs.existsSync(tempDir)) {
+                fs.mkdirSync(tempDir, { recursive: true });
+                console.log('✅ Fallback: Created temp uploads directory in /tmp:', tempDir);
+            }
+        } catch (fallbackError) {
+            console.error('❌ Fallback also failed:', fallbackError.message);
+            throw new Error('Unable to create upload directory');
+        }
+    } else {
+        throw error;
+    }
 }
 
 // Configure local storage
