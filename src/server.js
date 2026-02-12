@@ -72,7 +72,6 @@ async function startServer() {
 
     app.use(
         '/graphql',
-        cors(),
         express.json(),
         expressMiddleware(server, {
             context: context,
