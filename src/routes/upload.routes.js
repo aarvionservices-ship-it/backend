@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const uploadImage = require('../services/imageUploadService');
 const upload = require('../services/uploadService');
-const localUpload = require('../services/localUploadService');
 
 // Multer error handler middleware
 const handleMulterError = (err, req, res, next) => {
@@ -47,7 +46,7 @@ const handleMulterError = (err, req, res, next) => {
 };
 
 // @route   POST /api/upload
-// @desc    Upload resume/document (PDF, DOC, DOCX)
+// @desc    Upload resume/document (PDF, DOC, DOCX) to Cloudinary
 // @access  Public
 // Expected field name: 'resume' or 'file'
 router.post('/', (req, res) => {
@@ -98,7 +97,7 @@ router.post('/', (req, res) => {
 });
 
 // @route   POST /api/upload/image
-// @desc    Upload image (JPG, PNG, JPEG, WEBP)
+// @desc    Upload image (JPG, PNG, JPEG, WEBP) to Cloudinary
 // @access  Public/Protected (depending on use case)
 // Expected field name: 'image'
 router.post('/image', (req, res) => {
@@ -127,7 +126,7 @@ router.post('/image', (req, res) => {
 });
 
 // @route   POST /api/upload/multiple
-// @desc    Upload multiple files
+// @desc    Upload multiple files to Cloudinary
 // @access  Public
 // Expected field name: 'files'
 router.post('/multiple', (req, res) => {
@@ -165,6 +164,7 @@ router.post('/multiple', (req, res) => {
 router.get('/info', (req, res) => {
     res.status(200).json({
         success: true,
+        uploadProvider: 'Cloudinary',
         endpoints: {
             resume: {
                 url: '/api/upload',
@@ -172,14 +172,16 @@ router.get('/info', (req, res) => {
                 fieldName: 'resume',
                 alternativeFieldName: 'file',
                 acceptedFormats: ['pdf', 'doc', 'docx'],
-                description: 'Upload resume or document files'
+                maxSize: '10MB',
+                description: 'Upload resume or document files to Cloudinary'
             },
             image: {
                 url: '/api/upload/image',
                 method: 'POST',
                 fieldName: 'image',
                 acceptedFormats: ['jpg', 'png', 'jpeg', 'webp'],
-                description: 'Upload image files'
+                maxSize: '5MB',
+                description: 'Upload image files to Cloudinary'
             },
             multiple: {
                 url: '/api/upload/multiple',
@@ -187,192 +189,17 @@ router.get('/info', (req, res) => {
                 fieldName: 'files',
                 maxFiles: 5,
                 acceptedFormats: ['pdf', 'doc', 'docx'],
-                description: 'Upload multiple files'
+                maxSize: '10MB per file',
+                description: 'Upload multiple files to Cloudinary'
             }
         },
         tips: [
+            'All files are uploaded directly to Cloudinary cloud storage',
             'Make sure the form field name matches the expected field name',
             'Use FormData in JavaScript to send files',
             'Set Content-Type to multipart/form-data',
-            'Check file format before uploading'
-        ]
-    });
-});
-
-// ============================================
-// DEBUG ROUTES - Save files locally for testing
-// ============================================
-
-// @route   POST /api/upload/debug
-// @desc    Upload file to local temp folder (for debugging)
-// @access  Public
-router.post('/debug', (req, res) => {
-    console.log('\n🐛 DEBUG UPLOAD STARTED');
-    console.log('Headers:', req.headers);
-
-    const uploadMiddleware = localUpload.single('resume');
-
-    uploadMiddleware(req, res, (err) => {
-        if (err) {
-            console.log('❌ Upload Error:', err.message);
-            return handleMulterError(err, req, res, () => { });
-        }
-
-        if (!req.file) {
-            console.log('❌ No file received');
-            console.log('Request body:', req.body);
-            return res.status(400).json({
-                success: false,
-                message: 'No file uploaded. Expected field name: "resume"',
-                hint: 'Check that your form field name is "resume"',
-                receivedFields: Object.keys(req.body)
-            });
-        }
-
-        console.log('✅ File saved successfully!');
-        console.log('File details:', {
-            originalName: req.file.originalname,
-            savedName: req.file.filename,
-            size: req.file.size,
-            path: req.file.path
-        });
-
-        res.status(200).json({
-            success: true,
-            message: 'File uploaded to local temp folder successfully',
-            file: {
-                originalName: req.file.originalname,
-                savedName: req.file.filename,
-                size: req.file.size,
-                sizeKB: (req.file.size / 1024).toFixed(2),
-                sizeMB: (req.file.size / (1024 * 1024)).toFixed(2),
-                path: req.file.path,
-                mimetype: req.file.mimetype
-            },
-            instructions: [
-                'File saved locally for inspection',
-                `Check: ${req.file.path}`,
-                'Open the file to verify it is not corrupted',
-                'If file is good, frontend is sending correctly'
-            ]
-        });
-    });
-});
-
-// @route   POST /api/upload/debug-any
-// @desc    Upload file with any field name (for debugging field name issues)
-// @access  Public
-router.post('/debug-any', (req, res) => {
-    console.log('\n🐛 DEBUG ANY FIELD UPLOAD STARTED');
-    console.log('Headers:', req.headers);
-
-    const uploadMiddleware = localUpload.any(); // Accept any field name
-
-    uploadMiddleware(req, res, (err) => {
-        if (err) {
-            console.log('❌ Upload Error:', err.message);
-            return handleMulterError(err, req, res, () => { });
-        }
-
-        if (!req.files || req.files.length === 0) {
-            console.log('❌ No files received');
-            console.log('Request body:', req.body);
-            return res.status(400).json({
-                success: false,
-                message: 'No files uploaded',
-                receivedFields: Object.keys(req.body),
-                hint: 'Make sure you are sending a file in the request'
-            });
-        }
-
-        const file = req.files[0];
-        console.log('✅ File saved successfully!');
-        console.log('Field name used:', file.fieldname);
-        console.log('File details:', {
-            originalName: file.originalname,
-            savedName: file.filename,
-            size: file.size,
-            path: file.path
-        });
-
-        res.status(200).json({
-            success: true,
-            message: 'File uploaded successfully',
-            detectedFieldName: file.fieldname,
-            expectedFieldName: 'resume',
-            fieldNameMatch: file.fieldname === 'resume',
-            file: {
-                originalName: file.originalname,
-                savedName: file.filename,
-                size: file.size,
-                sizeKB: (file.size / 1024).toFixed(2),
-                sizeMB: (file.size / (1024 * 1024)).toFixed(2),
-                path: file.path,
-                mimetype: file.mimetype
-            },
-            instructions: [
-                'File saved locally for inspection',
-                `Check: ${file.path}`,
-                file.fieldname === 'resume'
-                    ? '✅ Field name is correct!'
-                    : `❌ Field name should be "resume" but is "${file.fieldname}"`,
-                'Open the file to verify it is not corrupted'
-            ]
-        });
-    });
-});
-
-// @route   GET /api/upload/debug-info
-// @desc    Get debug information about upload configuration
-// @access  Public
-router.get('/debug-info', (req, res) => {
-    const fs = require('fs');
-    const path = require('path');
-    const tempDir = path.join(__dirname, '../../temp/uploads');
-
-    let files = [];
-    let tempDirExists = false;
-
-    try {
-        if (fs.existsSync(tempDir)) {
-            tempDirExists = true;
-            files = fs.readdirSync(tempDir).map(filename => {
-                const filePath = path.join(tempDir, filename);
-                const stats = fs.statSync(filePath);
-                return {
-                    filename,
-                    size: stats.size,
-                    sizeKB: (stats.size / 1024).toFixed(2),
-                    sizeMB: (stats.size / (1024 * 1024)).toFixed(2),
-                    created: stats.birthtime,
-                    modified: stats.mtime,
-                    path: filePath
-                };
-            });
-        }
-    } catch (error) {
-        console.error('Error reading temp directory:', error);
-    }
-
-    res.status(200).json({
-        success: true,
-        tempDirectory: {
-            path: tempDir,
-            exists: tempDirExists,
-            fileCount: files.length
-        },
-        files: files,
-        debugEndpoints: {
-            'POST /api/upload/debug': 'Upload with field name "resume" (saves locally)',
-            'POST /api/upload/debug-any': 'Upload with any field name (saves locally)',
-            'GET /api/upload/debug-info': 'Get this debug information'
-        },
-        instructions: [
-            '1. Use /api/upload/debug to test with field name "resume"',
-            '2. Use /api/upload/debug-any to test with any field name',
-            '3. Files are saved to temp/uploads directory',
-            '4. Check the saved files to verify they are not corrupted',
-            '5. If files are good locally, the issue is with Cloudinary upload'
+            'Check file format before uploading',
+            'Files are stored permanently in Cloudinary'
         ]
     });
 });
