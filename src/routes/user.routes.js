@@ -191,4 +191,46 @@ router.get('/me', protect, async (req, res) => {
     }
 });
 
+// @desc    Update current user profile
+// @route   PUT /api/users/profile
+// @access  Private (All authenticated users)
+router.put('/profile', protect, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (user) {
+            user.name = req.body.name || user.name;
+            
+            // Password update
+            if (req.body.password) {
+                user.password = req.body.password;
+            }
+
+            const updatedUser = await user.save();
+            res.json({
+                success: true,
+                message: 'Profile updated successfully',
+                user: {
+                    _id: updatedUser._id,
+                    name: updatedUser.name,
+                    email: updatedUser.email,
+                    role: updatedUser.role,
+                    theme: updatedUser.theme || 'light'
+                }
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Server Error',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

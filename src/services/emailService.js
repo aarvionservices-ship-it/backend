@@ -30,9 +30,11 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendEmail = async (to, subject, text, html) => {
+    console.log('Sending email...');
     try {
         if (useResend) {
             // Use Resend to send email
+            console.log('Sending email via Resend...', process.env.EMAIL_USER);
             const data = await resend.emails.send({
                 from: process.env.EMAIL_USER || 'onboarding@resend.dev',
                 to: Array.isArray(to) ? to : [to],
@@ -44,6 +46,7 @@ const sendEmail = async (to, subject, text, html) => {
             return data;
         } else {
             // Use Nodemailer to send email
+            console.log('Sending email via Nodemailer...');
             const info = await transporter.sendMail({
                 from: process.env.EMAIL_USER,
                 to,
