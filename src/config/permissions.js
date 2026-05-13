@@ -99,6 +99,11 @@ const PERMISSIONS = {
         TIME_TO_HIRE: 'hr_analytics.time_to_hire_metrics',
         SOURCE_TRACKING: 'hr_analytics.candidate_source_tracking',
         PRODUCTIVITY: 'hr_analytics.recruiter_productivity_dashboard'
+    },
+    TIMESHEET_MANAGEMENT: {
+        CREATE_UPDATE: 'timesheet.create_and_update',
+        VIEW_ALL: 'timesheet.view_all_records',
+        DELETE_RECORDS: 'timesheet.delete_records'
     }
 };
 
@@ -108,20 +113,23 @@ const ROLE_PERMISSIONS = {
         ...Object.values(PERMISSIONS.SYSTEM_CONFIGURATION),
         ...Object.values(PERMISSIONS.COMPLIANCE_AUDIT),
         ...Object.values(PERMISSIONS.ANALYTICS_INSIGHTS),
-        ...Object.values(PERMISSIONS.BILLING_MONETIZATION)
+        ...Object.values(PERMISSIONS.BILLING_MONETIZATION),
+        ...Object.values(PERMISSIONS.TIMESHEET_MANAGEMENT)
     ],
     [ROLES.ADMIN]: [
         ...Object.values(PERMISSIONS.ORGANIZATION_MANAGEMENT),
         ...Object.values(PERMISSIONS.JOB_MODERATION),
         ...Object.values(PERMISSIONS.CANDIDATE_GOVERNANCE),
-        ...Object.values(PERMISSIONS.OPERATIONAL_ANALYTICS)
+        ...Object.values(PERMISSIONS.OPERATIONAL_ANALYTICS),
+        PERMISSIONS.TIMESHEET_MANAGEMENT.CREATE_UPDATE
     ],
     [ROLES.HR]: [
         ...Object.values(PERMISSIONS.JOB_MANAGEMENT),
         ...Object.values(PERMISSIONS.ATS),
         ...Object.values(PERMISSIONS.COMMUNICATION),
         ...Object.values(PERMISSIONS.COLLABORATION),
-        ...Object.values(PERMISSIONS.HR_ANALYTICS)
+        ...Object.values(PERMISSIONS.HR_ANALYTICS),
+        PERMISSIONS.TIMESHEET_MANAGEMENT.CREATE_UPDATE
     ]
 };
 

@@ -83,10 +83,13 @@ async function startServer() {
     app.use('/api/auth', require('./routes/auth.routes'));
     app.use('/api/users', require('./routes/user.routes'));
     app.use('/api/contact', require('./routes/contact.routes'));
+    app.use('/api/applications', require('./routes/jobApplication.routes'));
     app.use('/api/upload', require('./routes/upload.routes'));
     app.use('/api/jobs', require('./routes/job.routes'));
     app.use('/api/cms', require('./routes/cms.routes'));
     app.use('/api/admin', require('./routes/admin.routes'));
+    app.use('/api/timesheets', require('./routes/timesheetRoutes'));
+    app.use('/api/holidays', require('./routes/holidayRoutes'));
 
     // Health Check Route
     app.get('/api/health', (req, res) => {

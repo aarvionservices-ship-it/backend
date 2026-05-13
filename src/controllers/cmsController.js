@@ -95,13 +95,13 @@ const getSettings = async (req, res) => {
 
 const updateSetting = async (req, res) => {
     try {
-        let settings = await Setting.findOne();
-        if (settings) {
-            settings = await Setting.findByIdAndUpdate(settings._id, req.body, { new: true });
-        } else {
-            settings = await Setting.create(req.body);
-        }
-        res.json(settings);
+        const { key, value } = req.body;
+        const setting = await Setting.findOneAndUpdate(
+            { key }, 
+            { value, updatedAt: Date.now() }, 
+            { upsert: true, new: true }
+        );
+        res.json(setting);
     } catch (error) { res.status(400).json({ message: 'Update Failed' }); }
 };
 

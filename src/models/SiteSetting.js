@@ -16,7 +16,7 @@ const siteSettingSchema = new mongoose.Schema({
     },
     group: {
         type: String,
-        enum: ['General', 'SEO', 'Contact', 'Social'],
+        enum: ['General', 'SEO', 'Contact', 'Social', 'Timesheet'],
         default: 'General'
     },
     updatedAt: {
